@@ -174,13 +174,9 @@ class CodeHasher:
                 obj_bytes=str(obj).encode(),
             )
 
-        elif isinstance(obj, (list, set, tuple, frozenset)):
+        elif isinstance(obj, (list, tuple)):
             if isinstance(obj, list):
                 type_prefix = TypePrefix.LIST
-            elif isinstance(obj, set):
-                type_prefix = TypePrefix.SET
-            elif isinstance(obj, frozenset):
-                type_prefix = TypePrefix.FROZENSET
             else:
                 type_prefix = TypePrefix.TUPLE
             obj_bytes = str(len(obj)).encode()
@@ -195,6 +191,25 @@ class CodeHasher:
                     type_prefix=TypePrefix.HASH,
                     obj_bytes=self._check_and_hash(elem, code_context),
                 )
+
+        elif isinstance(obj, (set, frozenset)):
+            if isinstance(obj, set):
+                type_prefix = TypePrefix.SET
+            else:
+                type_prefix = TypePrefix.FROZENSET
+            obj_bytes = str(len(obj)).encode()
+            add_to_hash(
+                hash_accumulator,
+                type_prefix=type_prefix,
+                obj_bytes=obj_bytes,
+            )
+            elem_hashes = [self._check_and_hash(elem, code_context) for elem in obj]
+            elem_hashes.sort()
+            add_to_hash(
+                hash_accumulator,
+                type_prefix=TypePrefix.HASH,
+                obj_bytes=self._check_and_hash(elem_hashes, code_context),
+            )
 
         elif isinstance(obj, range):
             members = [obj.start, obj.stop, obj.step]
